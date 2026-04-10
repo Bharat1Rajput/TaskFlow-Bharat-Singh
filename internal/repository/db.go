@@ -2,25 +2,27 @@ package repository
 
 import (
 	"context"
-	"log"
+	"database/sql"
+	"fmt"
+	"log/slog"
 	"time"
-
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func NewDB(dbURL string) *pgxpool.Pool {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+func NewDB(ctx context.Context, dbURL string) (*sql.DB, error) {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	db, err := pgxpool.New(ctx, dbURL)
+	db, err := sql.Open("postgres", dbURL)
 	if err != nil {
-		log.Fatal("Failed to connect to DB:", err)
+		return nil, fmt.Errorf("failed to create db pool: %w", err)
 	}
 
-	if err := db.Ping(ctx); err != nil {
-		log.Fatal("DB ping failed:", err)
+	// Ping to verify connection
+	if err := db.Ping(); err != nil {
+		return nil, fmt.Errorf("failed to ping db: %w", err)
 	}
 
-	log.Println("Connected to database")
-	return db
+	slog.Info("database connected successfully")
+
+	return db, nil
 }

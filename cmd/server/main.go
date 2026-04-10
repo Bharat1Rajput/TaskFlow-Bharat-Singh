@@ -1,16 +1,19 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
 
-	"github.com/go-chi/chi/v5"
-
+	"github.com/Bharat1Rajput/taskflow-backend/internal/handler"
 	"github.com/Bharat1Rajput/taskflow-backend/internal/repository"
+	"github.com/Bharat1Rajput/taskflow-backend/internal/service"
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
+
 	port := os.Getenv("API_PORT")
 	dbURL := os.Getenv("DATABASE_URL")
 
@@ -18,19 +21,27 @@ func main() {
 		port = "8080"
 	}
 
-	if dbURL == "" {
-		log.Fatal("DATABASE_URL is required")
+	// DB
+	db, err := repository.NewDB(context.Background(), dbURL)
+	if err != nil {
+		log.Fatal("Failed to connect to database:", err)
 	}
-
-	//  Run migrations BEFORE server starts
+	// Run migrations
 	if err := repository.RunMigrations(dbURL); err != nil {
 		log.Fatal("Migration failed:", err)
 	}
+	r := gin.Default()
 
-	r := chi.NewRouter()
+	// Repositories
+	userRepo := repository.NewUserRepository(db)
+	authService := service.NewAuthService(userRepo)
+	authHandler := handler.NewAuthHandler(authService)
 
-	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("OK"))
+	r.POST("/auth/register", authHandler.Register)
+	r.POST("/auth/login", authHandler.Login)
+
+	r.GET("/health", func(c *gin.Context) {
+		c.String(200, "OK")
 	})
 
 	log.Println("Server running on port:", port)
