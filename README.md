@@ -1,130 +1,74 @@
-# 🧠 TaskFlow Backend — Production-Ready Go API
+# TaskFlow Backend
 
-A clean, production-quality backend built in Go for managing projects and tasks with authentication, authorization, and structured architecture.
+A small but production-minded backend built in Go to manage projects and tasks with authentication and proper access control.
 
-This project is designed to demonstrate **real backend engineering practices** — not just CRUD APIs.
+I focused on writing clean, readable code and enforcing rules at the right layer rather than just exposing endpoints.
 
 ---
 
-# 🚀 Overview
+## Overview
 
-TaskFlow is a backend system that allows users to:
+This service allows users to:
 
-* Register and authenticate using JWT
+* Register and login using JWT
 * Create and manage projects
-* Create, update, and assign tasks within projects
-* Filter and query tasks efficiently
-* Enforce strict authorization rules
+* Create and manage tasks inside projects
+* Filter tasks by status and assignee
+* Enforce ownership rules on updates and deletes
 
-The system is built with a strong focus on:
+**Tech stack:**
 
-* Clean architecture
-* Separation of concerns
-* Production-ready practices
-* Observability and maintainability
+* Go (Gin)
+* PostgreSQL
+* JWT for auth
+* golang-migrate for migrations
+* Docker + docker compose
 
 ---
 
-# 🏗️ Architecture
+## Architecture Decisions
 
-The project follows a layered architecture:
+I followed a simple layered structure:
 
 ```text
-Handler → Service → Repository → Database
+handler → service → repository → database
 ```
 
-### 🔹 Handler Layer
+* **Handlers** deal with HTTP (validation, response codes)
+* **Services** contain business logic and authorization rules
+* **Repositories** handle raw SQL queries
 
-* Handles HTTP requests/responses
-* Input validation
-* Status code management
+### Why this structure?
 
-### 🔹 Service Layer
+It keeps things predictable. Each layer has one job, which makes the code easier to reason about and debug.
 
-* Business logic
-* Authorization rules
-* Data validation
+### Tradeoffs I made
 
-### 🔹 Repository Layer
+* I **restricted task updates/deletes to project owners only**
+  → I intentionally skipped `creator_id` to keep authorization simple within the assignment scope
 
-* Database interaction
-* Raw SQL queries
-* No ORM (as required)
+* I used **raw SQL instead of an ORM**
+  → more control and aligns with the assignment, but slightly more verbose
 
----
-
-# 🔐 Authentication
-
-* JWT-based authentication
-* Token contains:
-
-  * `user_id`
-  * `email`
-* Token expiry: **24 hours**
-* Password hashing using **bcrypt (cost 12)**
-* All protected routes require:
-
-```http
-Authorization: Bearer <token>
-```
+* I didn’t over-engineer (no caching, no RBAC, no microservices)
+  → focused on correctness and clarity first
 
 ---
 
-# 🛡️ Authorization Rules
+## Running Locally
 
-### Projects
-
-* Only **owner** can update/delete a project
-
-### Tasks
-
-* Only **project owner** can update/delete tasks
-  *(simplified for this implementation)*
-
-> Note: In a production system, task-level ownership (creator) can be added for finer control.
-
----
-
-# 📦 Tech Stack
-
-* **Language:** Go
-* **Framework:** Gin
-* **Database:** PostgreSQL
-* **Migrations:** golang-migrate
-* **Auth:** JWT
-* **Logging:** slog (structured logging)
-* **Containerization:** Docker + Docker Compose
-
----
-
-# ⚙️ Getting Started
-
-## 1. Clone repository
+Assuming you only have Docker installed:
 
 ```bash
-git clone <your-repo-url>
-cd taskflow-backend
-```
+git clone https://github.com/Bharat1Rajput/taskflow-Bharat-Singh
+cd taskflow-Bharat-Singh
 
----
-
-## 2. Setup environment
-
-```bash
 cp .env.example .env
-```
 
----
-
-## 3. Run the application
-
-```bash
 docker compose up --build
 ```
 
----
-
-## 4. Server will be available at
+Once everything is up, the API will be available at:
 
 ```text
 http://localhost:<API_PORT>
@@ -132,199 +76,79 @@ http://localhost:<API_PORT>
 
 ---
 
-# 🔑 Test Credentials
+## Running Migrations
+
+Migrations run automatically when the application starts using `golang-migrate`.
+
+No manual commands are needed.
+
+---
+
+## Test Credentials
+
+You can log in immediately using the seeded user:
 
 ```text
-email: test@example.com
-password: password123
+Email:    test@example.com
+Password: Bharat123
 ```
 
 ---
 
-# 📚 API Reference
+## API Reference
+
+### Auth
+
+* `POST /auth/register`
+* `POST /auth/login`
 
 ---
 
-## 🔐 Auth
+### Projects
 
-### Register
+* `GET /projects`
+* `POST /projects`
+* `PATCH /projects/:id`
+* `DELETE /projects/:id`
+
+---
+
+### Tasks
+
+* `GET /projects/:id/tasks?status=&assignee=`
+* `POST /projects/:id/tasks`
+* `PATCH /tasks/:id`
+* `DELETE /tasks/:id`
+
+---
+
+### Example Flow
+
+1. Register or login → get JWT
+2. Create a project
+3. Add tasks to the project
+4. Use filters (`status`, `assignee`) to query tasks
+
+All non-auth routes require:
 
 ```http
-POST /auth/register
-```
-
-### Login
-
-```http
-POST /auth/login
+Authorization: Bearer <token>
 ```
 
 ---
 
-## 📁 Projects
+## What I’d Do With More Time
 
-### Get all projects
-
-```http
-GET /projects
-```
-
-### Create project
-
-```http
-POST /projects
-```
-
-### Update project
-
-```http
-PATCH /projects/:id
-```
-
-### Delete project
-
-```http
-DELETE /projects/:id
-```
+* Add pagination to project and task listing
+* Introduce finer-grained permissions (task creator vs owner)
+* Add integration tests
+* Add rate limiting and request validation improvements
+* Improve error handling consistency across all endpoints
 
 ---
 
-## 🧩 Tasks
+## Final Note
 
-### Get tasks (with filters)
+This project is intentionally kept simple in terms of scope, but I tried to keep the internals clean and realistic.
 
-```http
-GET /projects/:id/tasks?status=&assignee=
-```
-
-### Create task
-
-```http
-POST /projects/:id/tasks
-```
-
-### Update task
-
-```http
-PATCH /tasks/:id
-```
-
-### Delete task
-
-```http
-DELETE /tasks/:id
-```
-
----
-
-## 📊 Project Stats (Bonus)
-
-### Get aggregated stats
-
-```http
-GET /projects/:id/stats
-```
-
-Returns:
-
-* Task count by status
-* Task count by assignee
-
----
-
-# 🧠 Key Design Decisions
-
----
-
-## 1. Clean Architecture
-
-Separated layers ensure:
-
-* Maintainability
-* Testability
-* Scalability
-
----
-
-## 2. No ORM
-
-Used raw SQL because:
-
-* Better control over queries
-* Matches assignment requirement
-* Improves performance awareness
-
----
-
-## 3. Simplified Task Authorization
-
-* Only project owners can modify tasks
-
-**Tradeoff:**
-
-* Simpler logic
-* Easier to reason about
-
-**Future improvement:**
-
-* Add `creator_id` for finer access control
-
----
-
-## 4. Structured Logging (slog)
-
-* Logs include method, path, status, latency
-* Designed for production observability
-
----
-
-## 5. UUID-based IDs
-
-* Ensures global uniqueness
-* Avoids predictable IDs
-
----
-
-# 🧪 Testing
-
-A Postman/Bruno collection is included covering:
-
-* Auth flows
-* Project operations
-* Task operations
-* Authorization edge cases
-
----
-
-# 🐳 Docker Setup
-
-* PostgreSQL container with healthcheck
-* API container depends on DB readiness
-* Migrations run automatically on startup
-
----
-
-# 📈 What I Would Improve With More Time
-
-* Add pagination for large datasets
-* Introduce role-based access control (RBAC)
-* Add caching layer (Redis)
-* Add rate limiting and request throttling
-* Write full integration tests
-* Add CI/CD pipeline
-* Add search functionality
-
----
-
-# 💡 Final Thoughts
-
-This project reflects how I approach backend systems:
-
-* Start simple, but design for scale
-* Prioritize correctness and clarity
-* Enforce rules at the right layer
-* Build with production in mind
-
----
-
-> “A good backend is not just about endpoints — it's about enforcing rules, maintaining consistency, and being predictable under all conditions.”
+The goal was not just to “make it work”, but to make it understandable and maintainable.
