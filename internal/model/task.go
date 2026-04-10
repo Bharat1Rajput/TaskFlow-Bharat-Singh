@@ -1,9 +1,13 @@
 package model
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type Task struct {
-	ID          string     `json:"id"`
+	ID          uuid.UUID  `json:"id"`
 	Title       string     `json:"title"`
 	Description *string    `json:"description,omitempty"`
 	Status      string     `json:"status"`

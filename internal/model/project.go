@@ -1,11 +1,15 @@
 package model
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type Project struct {
-	ID          string    `json:"id"`
+	ID          uuid.UUID `json:"id"`
 	Name        string    `json:"name"`
 	Description *string   `json:"description,omitempty"`
-	OwnerID     string    `json:"owner_id"`
+	OwnerID     uuid.UUID `json:"owner_id"`
 	CreatedAt   time.Time `json:"created_at"`
 }
